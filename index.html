@@ -487,8 +487,8 @@ async function checkReminder(){
   if(!recs.some(r=>r.data===yest)){document.getElementById('dayReminderText').textContent='Voce ainda nao lancou a receita de ontem ('+fmtDate(yest)+')';document.getElementById('dayReminder').classList.add('show');}
 }
 function renderAreaConfig(){
-  document.getElementById('areaList').innerHTML=userConfig.areas.map(ar=>'<div class="area-item"><span class="cdot" style="background:'+ar.color+';width:14px;height:14px;border-radius:50%;flex-shrink:0;"></span><span class="area-name">'+ar.name+'</span><button class="area-del" onclick="deleteArea(''+ar.id+'')">x</button></div>').join('');
-  document.getElementById('colorPick').innerHTML=COLOR_PALETTE.map(c=>'<div class="color-opt '+(c===selectedColor?'sel':'')+'" style="background:'+c+'" onclick="selectColor(''+c+'')"></div>').join('');
+  document.getElementById('areaList').innerHTML=userConfig.areas.map(ar=>'<div class="area-item"><span class="cdot" style="background:'+ar.color+';width:14px;height:14px;border-radius:50%;flex-shrink:0;"></span><span class="area-name">'+ar.name+'</span><button class="area-del" data-id="'+ar.id+'" onclick="deleteArea(this.dataset.id)">x</button></div>').join('');
+  document.getElementById('colorPick').innerHTML=COLOR_PALETTE.map(c=>'<div class="color-opt '+(c===selectedColor?'sel':'')+'" style="background:'+c+'" data-color="'+c+'" onclick="selectColor(this.dataset.color)"></div>').join('');
 }
 function selectColor(c){selectedColor=c;document.querySelectorAll('.color-opt').forEach(el=>el.classList.toggle('sel',el.style.background===c||el.style.backgroundColor===c));}
 async function addArea(){const name=document.getElementById('newAreaName').value.trim();if(!name){alert('Informe o nome.');return;}const id=name.toLowerCase().replace(/\s+/g,'_')+Date.now();userConfig.areas.push({id,name,color:selectedColor});await saveConfig();document.getElementById('newAreaName').value='';renderAreaConfig();await renderDashboard();}
@@ -586,5 +586,3 @@ sb.auth.onAuthStateChange(async(event,session)=>{
 <\/script>
 </body>
 </html>
-
-  
