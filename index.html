@@ -579,9 +579,25 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     document.getElementById('loadingScreen').classList.remove('hidden');
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('appShell').style.display='none';
-    await loadConfig();await injectFixedDesps(curYear,curMonth);updateMonthLabel();await renderDashboard();await checkReminder();
-    document.getElementById('loadingScreen').classList.add('hidden');document.getElementById('appShell').style.display='flex';
-  } else {document.getElementById('loadingScreen').classList.add('hidden');document.getElementById('authScreen').classList.remove('hidden');document.getElementById('appShell').style.display='none';}
+    try {
+      await Promise.race([
+        loadConfig(),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000))
+      ]);
+    } catch(e) {
+      console.warn('loadConfig falhou, usando defaults:', e);
+    }
+    try { await injectFixedDesps(curYear,curMonth); } catch(e) { console.warn('injectFixed falhou:', e); }
+    updateMonthLabel();
+    try { await renderDashboard(); } catch(e) { console.warn('renderDashboard falhou:', e); }
+    try { await checkReminder(); } catch(e) {}
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('appShell').style.display='flex';
+  } else {
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('appShell').style.display='none';
+  }
 });
 </script>
 </body>
