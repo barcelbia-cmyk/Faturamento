@@ -11,7 +11,7 @@
 <title>Faturamento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -332,7 +332,7 @@ tfoot td:first-child{text-align:left;color:var(--text2);}
 <div class="sheet-overlay" id="sheetRec" onclick="if(event.target===this)closeSheet('sheetRec')"><div class="sheet"><div class="sheet-handle"></div><div class="sheet-title">Nova receita</div><div class="sheet-body"><div class="sheet-field"><span class="sheet-lbl">Data</span><input class="sheet-inp" type="date" id="rec-date"></div><div class="cats-grid" id="cats-grid"></div><div class="sheet-field"><span class="sheet-lbl">Nota (opcional)</span><input class="sheet-inp sm" type="text" id="rec-note" placeholder="ex: campeonato de Curitiba"></div><button class="sheet-btn primary" onclick="saveRec()">Salvar receita</button><button class="sheet-btn secondary" onclick="closeSheet('sheetRec')">Cancelar</button></div></div></div>
 <div class="sheet-overlay" id="sheetDesp" onclick="if(event.target===this)closeSheet('sheetDesp')"><div class="sheet"><div class="sheet-handle"></div><div class="sheet-title">Nova despesa</div><div class="sheet-body"><div class="sheet-field"><span class="sheet-lbl">Data</span><input class="sheet-inp" type="date" id="desp-date"></div><div class="sheet-field"><span class="sheet-lbl">Valor (R$)</span><input class="sheet-inp" type="number" min="0" step="0.01" id="desp-val" placeholder="0,00" inputmode="decimal"></div><div class="sheet-field"><span class="sheet-lbl">Categoria</span><select class="sheet-sel" id="desp-cat-sel" onchange="handleCatSel()"></select></div><div id="new-cat-row" style="display:none;" class="sheet-field"><span class="sheet-lbl">Nome da nova categoria</span><input class="sheet-inp" type="text" id="new-cat-name" placeholder="ex: Combustivel"></div><div class="sheet-field"><span class="sheet-lbl">Nota (opcional)</span><input class="sheet-inp sm" type="text" id="desp-note" placeholder="ex: parcela do carro"></div><div class="toggle-row"><div class="toggle-info"><div class="tl">Despesa fixa mensal</div><div class="ts">Aparece automaticamente todo mes</div></div><button class="toggle" id="despFixaToggle" onclick="this.classList.toggle('on')"></button></div><button class="sheet-btn primary" onclick="saveDesp()">Salvar despesa</button><button class="sheet-btn secondary" onclick="closeSheet('sheetDesp')">Cancelar</button></div></div></div>
 <div class="sheet-overlay" id="sheetMeta" onclick="if(event.target===this)closeSheet('sheetMeta')"><div class="sheet"><div class="sheet-handle"></div><div class="sheet-title" id="metaSheetTitle">Metas do mes</div><div class="sheet-body"><div class="sheet-field"><span class="sheet-lbl">Meta total do mes</span><input class="sheet-inp" type="number" min="0" step="100" id="meta-total" inputmode="numeric"></div><div class="sheet-field"><span class="sheet-lbl">Meta anual acumulada</span><input class="sheet-inp" type="number" min="0" step="500" id="meta-anual" inputmode="numeric"></div><div class="meta-edit-grid" id="metaEditGrid"></div><button class="sheet-btn primary" onclick="saveMetas()">Salvar metas</button><button class="sheet-btn secondary" onclick="closeSheet('sheetMeta')">Cancelar</button></div></div></div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 const SUPABASE_URL='https://iaijpiwxsgzxaljwbzbd.supabase.co';
 const SUPABASE_KEY='sb_publishable_ylACeL6M1srUdSNDqmFlTQ_vzsjvqJu';
@@ -583,6 +583,6 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     document.getElementById('loadingScreen').classList.add('hidden');document.getElementById('appShell').style.display='flex';
   } else {document.getElementById('loadingScreen').classList.add('hidden');document.getElementById('authScreen').classList.remove('hidden');document.getElementById('appShell').style.display='none';}
 });
-<\/script>
+</script>
 </body>
 </html>
