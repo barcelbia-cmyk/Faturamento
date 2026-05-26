@@ -592,21 +592,15 @@ async function initApp(user){
   if(appInitialized)return;
   appInitialized=true;
   currentUser=user;
-  document.getElementById('loadingScreen').classList.remove('hidden');
+  // Show app immediately, load data in background
+  document.getElementById('loadingScreen').classList.add('hidden');
   document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('appShell').style.display='none';
-  // Hard timeout — show app after 5s no matter what
-  const hardTimeout=setTimeout(()=>{
-    document.getElementById('loadingScreen').classList.add('hidden');
-    document.getElementById('appShell').style.display='flex';
-  },5000);
-  try { await loadConfig(); } catch(e) { console.warn('loadConfig:', e); }
+  document.getElementById('appShell').style.display='flex';
   updateMonthLabel();
+  // Load config and render in background
+  try { await loadConfig(); } catch(e) { console.warn('loadConfig:', e); }
   try { await renderDashboard(); } catch(e) { console.warn('renderDashboard:', e); }
   try { checkReminder(); } catch(e) {}
-  clearTimeout(hardTimeout);
-  document.getElementById('loadingScreen').classList.add('hidden');
-  document.getElementById('appShell').style.display='flex';
 }
 
 sb.auth.onAuthStateChange(async(event,session)=>{
