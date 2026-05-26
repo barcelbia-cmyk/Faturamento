@@ -376,14 +376,15 @@ async function doLogout(){await sb.auth.signOut();currentUser=null;cache={recs:{
 function showLogin(){document.getElementById('loginForm').style.display='';document.getElementById('registerForm').style.display='none';}
 function showRegister(){document.getElementById('loginForm').style.display='none';document.getElementById('registerForm').style.display='';}
 async function loadConfig(){
-  const{data,error}=await sb.from('configuracoes').select('*').eq('user_id',currentUser.id).maybeSingle();
+  const{data}=await sb.from('configuracoes').select('*').eq('user_id',currentUser.id).maybeSingle();
   if(data){
     userConfig.areas=data.areas&&data.areas.length?data.areas:DEFAULT_AREAS;
     userConfig.desp_cats=data.desp_cats&&data.desp_cats.length?data.desp_cats:DEFAULT_DESP_CATS;
     userConfig.alert_pct=data.alert_pct||50;
     userConfig.fixed_desps=data.fixed_desps||[];
   } else {
-    await sb.from('configuracoes').insert({user_id:currentUser.id,areas:DEFAULT_AREAS,desp_cats:DEFAULT_DESP_CATS,alert_pct:50,fixed_desps:[]});
+    // Insert in background, don't await
+    sb.from('configuracoes').insert({user_id:currentUser.id,areas:DEFAULT_AREAS,desp_cats:DEFAULT_DESP_CATS,alert_pct:50,fixed_desps:[]}).then(()=>{}).catch(()=>{});
   }
 }
 async function saveConfig(){showSaving();await sb.from('configuracoes').upsert({user_id:currentUser.id,...userConfig},{onConflict:'user_id'});}
@@ -591,18 +592,10 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     document.getElementById('loadingScreen').classList.remove('hidden');
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('appShell').style.display='none';
-    try {
-      await Promise.race([
-        loadConfig(),
-        new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000))
-      ]);
-    } catch(e) {
-      console.warn('loadConfig falhou, usando defaults:', e);
-    }
-    try { await injectFixedDesps(curYear,curMonth); } catch(e) { console.warn('injectFixed falhou:', e); }
+    try { await loadConfig(); } catch(e) { console.warn('loadConfig falhou:', e); }
     updateMonthLabel();
     try { await renderDashboard(); } catch(e) { console.warn('renderDashboard falhou:', e); }
-    try { await checkReminder(); } catch(e) {}
+    try { checkReminder(); } catch(e) {}
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('appShell').style.display='flex';
   } else {
