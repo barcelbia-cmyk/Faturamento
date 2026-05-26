@@ -376,9 +376,15 @@ async function doLogout(){await sb.auth.signOut();currentUser=null;cache={recs:{
 function showLogin(){document.getElementById('loginForm').style.display='';document.getElementById('registerForm').style.display='none';}
 function showRegister(){document.getElementById('loginForm').style.display='none';document.getElementById('registerForm').style.display='';}
 async function loadConfig(){
-  const{data}=await sb.from('configuracoes').select('*').eq('user_id',currentUser.id).single();
-  if(data){userConfig.areas=data.areas&&data.areas.length?data.areas:DEFAULT_AREAS;userConfig.desp_cats=data.desp_cats&&data.desp_cats.length?data.desp_cats:DEFAULT_DESP_CATS;userConfig.alert_pct=data.alert_pct||50;userConfig.fixed_desps=data.fixed_desps||[];}
-  else await sb.from('configuracoes').insert({user_id:currentUser.id,areas:DEFAULT_AREAS,desp_cats:DEFAULT_DESP_CATS,alert_pct:50,fixed_desps:[]});
+  const{data,error}=await sb.from('configuracoes').select('*').eq('user_id',currentUser.id).maybeSingle();
+  if(data){
+    userConfig.areas=data.areas&&data.areas.length?data.areas:DEFAULT_AREAS;
+    userConfig.desp_cats=data.desp_cats&&data.desp_cats.length?data.desp_cats:DEFAULT_DESP_CATS;
+    userConfig.alert_pct=data.alert_pct||50;
+    userConfig.fixed_desps=data.fixed_desps||[];
+  } else {
+    await sb.from('configuracoes').insert({user_id:currentUser.id,areas:DEFAULT_AREAS,desp_cats:DEFAULT_DESP_CATS,alert_pct:50,fixed_desps:[]});
+  }
 }
 async function saveConfig(){showSaving();await sb.from('configuracoes').upsert({user_id:currentUser.id,...userConfig},{onConflict:'user_id'});}
 async function loadRecs(y,m){
@@ -397,7 +403,7 @@ async function loadDesps(y,m){
 }
 async function loadMetas(y,m){
   const k=mkKey(y,m);if(cache.metas[k])return cache.metas[k];
-  const{data}=await sb.from('metas').select('*').eq('user_id',currentUser.id).eq('ano',y).eq('mes',m).single();
+  const{data}=await sb.from('metas').select('*').eq('user_id',currentUser.id).eq('ano',y).eq('mes',m).maybeSingle();
   cache.metas[k]=data?data.valores:{Total:0,Anual:0};return cache.metas[k];
 }
 async function injectFixedDesps(y,m){
