@@ -489,7 +489,7 @@ function dismissAlert(){alertDismissed=true;document.getElementById('alertBanner
 function dismissReminder(){reminderDismissed=true;document.getElementById('dayReminder').classList.remove('show');}
 async function checkReminder(){
   if(reminderDismissed)return;const yest=yesterdayStr();const[y,ms]=yest.split('-').map(Number);
-  const recs=await loadRecs(y,ms-1);
+  const recs=cache.recs[mkKey(y,ms-1)]||[];
   if(!recs.some(r=>r.data===yest)){document.getElementById('dayReminderText').textContent='Voce ainda nao lancou a receita de ontem ('+fmtDate(yest)+')';document.getElementById('dayReminder').classList.add('show');}
 }
 function renderAreaConfig(){
@@ -514,8 +514,14 @@ async function renderDashboard(){
   if(!alertDismissed&&recTotal>0&&despTotal>0&&(despTotal/recTotal*100)>=ap){document.getElementById('alertText').textContent='Despesas em '+(despTotal/recTotal*100).toFixed(0)+'% da receita (limite: '+ap+'%)';document.getElementById('alertBanner').classList.add('show');}
   else document.getElementById('alertBanner').classList.remove('show');
   const cmp=(cur,prev)=>{if(!prev)return '';const d=((cur-prev)/prev*100).toFixed(0);if(d>0)return '<div class="mcompare arr-up">^ '+d+'% vs mes ant.</div>';if(d<0)return '<div class="mcompare arr-down">v '+Math.abs(d)+'% vs mes ant.</div>';return '';};
+  // Calculate annual from cache only to avoid 24 extra queries
   let annualRec=0,annualDesp=0;
-  for(let mi=0;mi<12;mi++){const r=await loadRecs(curYear,mi);const d=await loadDesps(curYear,mi);annualRec+=getRecTotal(r);annualDesp+=getDespTotal(d);}
+  for(let mi=0;mi<12;mi++){
+    const rk=mkKey(curYear,mi);
+    const dk=mkKey(curYear,mi);
+    annualRec+=getRecTotal(cache.recs[rk]||[]);
+    annualDesp+=getDespTotal(cache.desps[dk]||[]);
+  }
   const annualSaldo=annualRec-annualDesp;
   const byDay={};recs.forEach(r=>{const t=userConfig.areas.reduce((s,ar)=>s+((r.vals||{})[ar.id]||0),0);byDay[r.data]=(byDay[r.data]||0)+t;});
   const bestDay=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
@@ -540,7 +546,7 @@ async function renderDashboard(){
   else bd.innerHTML=sorted.map(([cat,val])=>'<div class="breakdown-row"><span class="bk-label">'+cat+'</span><div class="bk-bar-wrap"><div class="bk-bar-fill" style="width:'+(val/maxD*100).toFixed(0)+'%;background:#C0392B44;"></div></div><span class="bk-val">-'+fmtBRL(val)+'</span></div>').join('');
   const totalDays=daysInMonth(curYear,curMonth);const today=new Date();const isNow=curYear===today.getFullYear()&&curMonth===today.getMonth();const todayDay=today.getDate();
   const launched=new Set(recs.map(r=>parseInt(r.data.split('-')[2])));
-  let streak=0;for(let i=1;i<=90;i++){const d=new Date(today);d.setDate(d.getDate()-i);const y=d.getFullYear(),mi=d.getMonth();const ds=y+'-'+String(mi+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const r=await loadRecs(y,mi);if(r.some(rec=>rec.data===ds))streak++;else break;}
+  let streak=0;for(let i=1;i<=90;i++){const d=new Date(today);d.setDate(d.getDate()-i);const y=d.getFullYear(),mi=d.getMonth();const ds=y+'-'+String(mi+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const r=cache.recs[mkKey(y,mi)]||[];if(r.some(rec=>rec.data===ds))streak++;else break;}
   document.getElementById('streakBadge').innerHTML=streak>0?'<div class="streak-badge">'+streak+' dia'+(streak===1?'':'s')+' seguidos</div>':'';
   document.getElementById('daysGrid').innerHTML=Array.from({length:totalDays},(_,i)=>{const day=i+1;const isFuture=isNow&&day>todayDay;const isToday=isNow&&day===todayDay;const has=launched.has(day);let cls='day-dot';if(has)cls+=' has';else if(isToday)cls+=' today';else if(isFuture)cls+=' future';return '<div class="'+cls+'">'+day+'</div>';}).join('');
   const dLaunched=launched.size,dTotal=isNow?todayDay:totalDays,dMissing=dTotal-dLaunched,avgD=dLaunched>0?recTotal/dLaunched:0;
@@ -572,9 +578,9 @@ async function renderComparativo(){
   document.getElementById('annualPieLegend').innerHTML=userConfig.areas.map((ar,i)=>{const pct=grand>0?((tots[i]/grand)*100).toFixed(0):0;return '<div class="cat-pct-item"><span class="cat-pct-dot" style="background:'+ar.color+'"></span>'+ar.name+' '+pct+'%</div>';}).join('');
 }
 async function renderAnnualTable(){
-  let html='';for(let mi=0;mi<12;mi++){const r=await loadRecs(curYear,mi);const d=await loadDesps(curYear,mi);const rec=getRecTotal(r);const desp=getDespTotal(d);const saldo=rec-desp;html+='<tr><td>'+MONTHS_PT[mi]+'</td><td>'+(rec>0?fmtBRL(rec):'--')+'</td><td style="color:var(--red)">'+(desp>0?'-'+fmtBRL(desp):'--')+'</td><td style="color:'+(saldo>=0?'var(--green)':'var(--red)')+'font-weight:600;">'+(rec>0||desp>0?fmtBRL(saldo):'--')+'</td></tr>';}
+  let html='';for(let mi=0;mi<12;mi++){const r=cache.recs[mkKey(curYear,mi)]||[];const d=cache.desps[mkKey(curYear,mi)]||[];const rec=getRecTotal(r);const desp=getDespTotal(d);const saldo=rec-desp;html+='<tr><td>'+MONTHS_PT[mi]+'</td><td>'+(rec>0?fmtBRL(rec):'--')+'</td><td style="color:var(--red)">'+(desp>0?'-'+fmtBRL(desp):'--')+'</td><td style="color:'+(saldo>=0?'var(--green)':'var(--red)')+'font-weight:600;">'+(rec>0||desp>0?fmtBRL(saldo):'--')+'</td></tr>';}
   document.getElementById('annualBody').innerHTML=html;
-  let gRec=0,gDesp=0;for(let mi=0;mi<12;mi++){gRec+=getRecTotal(await loadRecs(curYear,mi));gDesp+=getDespTotal(await loadDesps(curYear,mi));}
+  let gRec=0,gDesp=0;for(let mi=0;mi<12;mi++){gRec+=getRecTotal(cache.recs[mkKey(curYear,mi)]||[]);gDesp+=getDespTotal(cache.desps[mkKey(curYear,mi)]||[]);}
   const gS=gRec-gDesp;document.getElementById('annualFoot').innerHTML='<tr><td>Total</td><td>'+fmtBRL(gRec)+'</td><td style="color:var(--red)">-'+fmtBRL(gDesp)+'</td><td style="color:'+(gS>=0?'var(--green)':'var(--red)')+'">'+fmtBRL(gS)+'</td></tr>';
 }
 const manifest={name:'Faturamento',short_name:'Faturamento',start_url:'.',display:'standalone',background_color:'#F5F5F3',theme_color:'#ffffff',icons:[{src:'data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 192 192\"><rect width=\"192\" height=\"192\" rx=\"32\" fill=\"%231A1A18\"/><rect x=\"40\" y=\"40\" width=\"44\" height=\"44\" rx=\"8\" fill=\"white\"/><rect x=\"108\" y=\"40\" width=\"44\" height=\"44\" rx=\"8\" fill=\"white\"/><rect x=\"40\" y=\"108\" width=\"44\" height=\"44\" rx=\"8\" fill=\"white\"/><rect x=\"108\" y=\"108\" width=\"44\" height=\"44\" rx=\"8\" fill=\"white\"/></svg>',sizes:'192x192',type:'image/svg+xml'}]};
