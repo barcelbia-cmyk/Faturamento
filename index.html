@@ -623,7 +623,7 @@ async function renderDashboard(){
   const prevRecSamePeriod=getRecTotal(prevRecsUpToDay);
   const rows=[];
   if(avgD>0)rows.push({label:'Media por dia lancado',val:fmtBRL(avgD)});
-  if(isNow&&dElapsed>0&&recTotal>0){const proj=recTotal/dElapsed*totalDays;rows.push({label:'Projecao fechamento',val:fmtK(proj)});}
+  if(isNow&&daysWithRecs>0&&recTotal>0){const proj=recTotal/daysWithRecs*totalDays;rows.push({label:'Projecao fechamento',val:fmtK(proj)});}
   if(isNow&&prevRecSamePeriod>0){const diff=((recTotal-prevRecSamePeriod)/prevRecSamePeriod*100).toFixed(0);rows.push({label:'vs mesmo periodo mes ant.',val:(diff>0?'^ ':diff<0?'v ':'')+Math.abs(diff)+'%',ok:diff>0,warn:diff<0});}
   if(dMissing>0)rows.push({label:'Dias sem lancamento',val:dMissing+' dia'+(dMissing===1?'':'s'),warn:true});
   else if(dLaunched>0)rows.push({label:'Dias sem lancamento',val:'Nenhum',ok:true});
