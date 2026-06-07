@@ -231,6 +231,11 @@ tbody td{padding:8px 10px;text-align:right;color:var(--text);font-size:12px;bord
 tbody td:first-child{text-align:left;color:var(--text2);font-weight:500;}
 tfoot td{padding:8px 10px;text-align:right;font-weight:600;background:var(--surface);border-top:1px solid var(--border2);font-size:12px;}
 tfoot td:first-child{text-align:left;color:var(--text2);}
+.entry-grp-hd{display:flex;justify-content:space-between;align-items:center;padding:5px 14px 4px;background:var(--surface);border-bottom:1px solid var(--border);}
+.egd-date{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;}
+.egd-sum{font-size:11px;font-weight:600;color:var(--text);}
+.egd-sum.red{color:var(--red);}
+.entry.grouped{padding-left:20px;}
 .saving{position:fixed;top:calc(var(--safe-t) + 56px);right:12px;background:var(--text);color:white;font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;z-index:500;opacity:0;transition:opacity .2s;pointer-events:none;}
 .saving.show{opacity:1;}
 </style>
@@ -526,8 +531,18 @@ async function renderDashboard(){
   const annualSaldo=annualRec-annualDesp;
   const byDay={};recs.forEach(r=>{const t=userConfig.areas.reduce((s,ar)=>s+((r.vals||{})[ar.id]||0),0);byDay[r.data]=(byDay[r.data]||0)+t;});
   const bestDay=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
+  const totalDays=daysInMonth(curYear,curMonth);const today=new Date();const isNow=curYear===today.getFullYear()&&curMonth===today.getMonth();const todayDay=today.getDate();
+  const dElapsed=isNow?todayDay:totalDays;
+  const recDailyAvg=dElapsed>0?recTotal/dElapsed:0;
+  const despDailyAvg=dElapsed>0?despTotal/dElapsed:0;
   document.getElementById('metricsTop').innerHTML='<div class="metric '+(saldo>=0?'green-card':'red-card')+'"><div class="mlabel">Saldo</div><div class="mval '+(saldo>=0?'green':'red')+'">'+fmtK(saldo)+'</div><div class="msub '+(saldo>=0?'green':'red')+'">'+(saldo>=0?'no azul':'no vermelho')+'</div></div><div class="metric"><div class="mlabel">Meta mensal</div><div class="mval sm" style="color:'+clrMeta+'">'+pctMeta.toFixed(0)+'%</div><div class="msub">falta '+fmtK(Math.max(0,metaTotal-recTotal))+'</div><div class="mbar"><div class="mfill" style="width:'+pctMeta+'%;background:'+fillMeta+'"></div></div></div>';
-  document.getElementById('metricsMid').innerHTML='<div class="metric"><div class="mlabel">Receita</div><div class="mval sm">'+fmtK(recTotal)+'</div><div class="msub">'+recs.length+' lancamentos</div>'+cmp(recTotal,prevRec)+'</div><div class="metric"><div class="mlabel">Despesas</div><div class="mval sm red">'+fmtK(despTotal)+'</div><div class="msub">'+desps.length+' lancamentos</div>'+cmp(despTotal,prevDesp)+'</div><div class="metric"><div class="mlabel">Saldo ano</div><div class="mval sm '+(annualSaldo>=0?'green':'red')+'">'+fmtK(annualSaldo)+'</div><div class="msub">receita: '+fmtK(annualRec)+'</div></div><div class="metric"><div class="mlabel">Melhor dia</div><div class="mval sm">'+(bestDay?fmtK(bestDay[1]):'--')+'</div><div class="msub">'+(bestDay?fmtDate(bestDay[0]):'sem dados')+'</div></div>';
+  document.getElementById('metricsMid').innerHTML=
+    '<div class="metric"><div class="mlabel">Receita</div><div class="mval sm">'+fmtK(recTotal)+'</div><div class="msub">'+recs.length+' lancamentos</div>'+cmp(recTotal,prevRec)+'</div>'+
+    '<div class="metric"><div class="mlabel">Media rec/dia</div><div class="mval sm green">'+fmtK(recDailyAvg)+'</div><div class="msub">'+dElapsed+' dias corridos</div></div>'+
+    '<div class="metric"><div class="mlabel">Despesas</div><div class="mval sm red">'+fmtK(despTotal)+'</div><div class="msub">'+desps.length+' lancamentos</div>'+cmp(despTotal,prevDesp)+'</div>'+
+    '<div class="metric"><div class="mlabel">Media desp/dia</div><div class="mval sm red">'+fmtK(despDailyAvg)+'</div><div class="msub">'+dElapsed+' dias corridos</div></div>'+
+    '<div class="metric"><div class="mlabel">Saldo ano</div><div class="mval sm '+(annualSaldo>=0?'green':'red')+'">'+fmtK(annualSaldo)+'</div><div class="msub">receita: '+fmtK(annualRec)+'</div></div>'+
+    '<div class="metric"><div class="mlabel">Melhor dia</div><div class="mval sm">'+(bestDay?fmtK(bestDay[1]):'--')+'</div><div class="msub">'+(bestDay?fmtDate(bestDay[0]):'sem dados')+'</div></div>';
   if(metaAnual>0){const pctA=Math.min((annualRec/metaAnual)*100,100);const clrA=pctA>=100?'#18794E':pctA>=70?'#92400E':'#C0392B';document.getElementById('metaAcumCard').innerHTML='<div class="meta-acum-card"><div class="mac-top"><div><div class="mac-label2">Meta anual acumulada</div><div class="mac-val2" style="color:'+clrA+'">'+fmtK(annualRec)+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">de '+fmtBRL(metaAnual)+' - falta '+fmtK(Math.max(0,metaAnual-annualRec))+'</div></div><div><div class="mac-pct2" style="color:'+clrA+'">'+pctA.toFixed(0)+'%</div></div></div><div class="mbar"><div class="mfill" style="width:'+pctA+'%;background:'+clrA+'"></div></div></div>';}
   else document.getElementById('metaAcumCard').innerHTML='';
   const strip=document.getElementById('catPctStrip');
@@ -536,16 +551,35 @@ async function renderDashboard(){
   document.getElementById('metasAreaGrid').innerHTML=userConfig.areas.map(ar=>{const real=getAreaTotal(recs,ar.id);const meta=metas[ar.id]||0;const pct=meta>0?Math.min((real/meta)*100,100):0;const clr=pct>=100?'#18794E':pct>=70?'#92400E':'#C0392B';const fill=pct>=100?'#18794E':pct>=70?'#D97706':'#C0392B';return '<div class="meta-area-card"><div class="mac-label"><span class="cdot" style="background:'+ar.color+'"></span>'+ar.name+'</div><div class="mac-val">'+fmtK(real)+'</div><div class="mac-pct" style="color:'+clr+'">'+(meta>0?pct.toFixed(0)+'%':'--')+'</div><div class="mac-bar"><div class="mac-fill" style="width:'+pct+'%;background:'+fill+'"></div></div><div class="mac-meta">'+(meta>0?'Meta: '+fmtBRL(meta):'')+'</div></div>';}).join('');
   const rl=document.getElementById('rec-list');
   if(!recs.length)rl.innerHTML='<div class="empty-state">Nenhuma receita lancada</div>';
-  else rl.innerHTML=recs.map(r=>{const total=userConfig.areas.reduce((s,ar)=>s+((r.vals||{})[ar.id]||0),0);const pills=userConfig.areas.filter(ar=>(r.vals||{})[ar.id]>0).map(ar=>'<span class="cat-pill" style="border-left:2px solid '+ar.color+';padding-left:5px;">'+ar.name+'</span>').join('');return '<div class="entry"><div class="entry-left"><span class="entry-date">'+fmtDate(r.data)+'</span></div><div class="entry-info"><div class="entry-cats">'+pills+'</div>'+(r.note?'<div class="entry-note">'+r.note+'</div>':'')+'</div><div class="entry-right"><span class="entry-val">'+fmtBRL(total)+'</span><button class="del-btn" onclick="deleteRec('+r.id+')">x</button></div></div>';}).join('');
+  else{
+    const recByDate={};recs.forEach(r=>{if(!recByDate[r.data])recByDate[r.data]=[];recByDate[r.data].push(r);});
+    const recDates=Object.keys(recByDate).sort((a,b)=>b.localeCompare(a));
+    rl.innerHTML=recDates.map(date=>{
+      const dr=recByDate[date];
+      const ds=dr.reduce((s,r)=>s+userConfig.areas.reduce((as,ar)=>as+((r.vals||{})[ar.id]||0),0),0);
+      const hd='<div class="entry-grp-hd"><span class="egd-date">'+fmtDate(date)+'</span><span class="egd-sum">'+fmtBRL(ds)+'</span></div>';
+      const rows=dr.map(r=>{const total=userConfig.areas.reduce((s,ar)=>s+((r.vals||{})[ar.id]||0),0);const pills=userConfig.areas.filter(ar=>(r.vals||{})[ar.id]>0).map(ar=>'<span class="cat-pill" style="border-left:2px solid '+ar.color+';padding-left:5px;">'+ar.name+'</span>').join('');return '<div class="entry grouped"><div class="entry-info"><div class="entry-cats">'+pills+'</div>'+(r.note?'<div class="entry-note">'+r.note+'</div>':'')+'</div><div class="entry-right"><span class="entry-val">'+fmtBRL(total)+'</span><button class="del-btn" onclick="deleteRec('+r.id+')">x</button></div></div>';}).join('');
+      return hd+rows;
+    }).join('');
+  }
   const dl=document.getElementById('desp-list');
   if(!desps.length)dl.innerHTML='<div class="empty-state">Nenhuma despesa lancada</div>';
-  else dl.innerHTML=desps.map(d=>'<div class="entry"><div class="entry-left"><span class="entry-date">'+fmtDate(d.data)+'</span>'+(d.is_fixed?'<span class="entry-fixed-badge">FIXA</span>':'')+'</div><div class="entry-info"><span class="entry-cat-name">'+d.categoria+'</span>'+(d.note?'<div class="entry-note">'+d.note+'</div>':'')+'</div><div class="entry-right"><span class="entry-val neg">-'+fmtBRL(d.val)+'</span><button class="del-btn" onclick="deleteDesp('+d.id+')">x</button></div></div>').join('');
+  else{
+    const despByDate={};desps.forEach(d=>{if(!despByDate[d.data])despByDate[d.data]=[];despByDate[d.data].push(d);});
+    const despDates=Object.keys(despByDate).sort((a,b)=>b.localeCompare(a));
+    dl.innerHTML=despDates.map(date=>{
+      const dd=despByDate[date];
+      const ds=dd.reduce((s,d)=>s+(d.val||0),0);
+      const hd='<div class="entry-grp-hd"><span class="egd-date">'+fmtDate(date)+'</span><span class="egd-sum red">-'+fmtBRL(ds)+'</span></div>';
+      const rows=dd.map(d=>'<div class="entry grouped"><div class="entry-info"><span class="entry-cat-name">'+d.categoria+'</span>'+(d.is_fixed?'<span class="entry-fixed-badge" style="margin-left:6px;">FIXA</span>':'')+(d.note?'<div class="entry-note">'+d.note+'</div>':'')+'</div><div class="entry-right"><span class="entry-val neg">-'+fmtBRL(d.val)+'</span><button class="del-btn" onclick="deleteDesp('+d.id+')">x</button></div></div>').join('');
+      return hd+rows;
+    }).join('');
+  }
   const catMap={};desps.forEach(d=>{catMap[d.categoria]=(catMap[d.categoria]||0)+(d.val||0);});
   const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);const maxD=sorted.length?sorted[0][1]:1;
   const bd=document.getElementById('despBreakdown');
   if(!sorted.length)bd.innerHTML='<div class="empty-state">Sem despesas</div>';
   else bd.innerHTML=sorted.map(([cat,val])=>'<div class="breakdown-row"><span class="bk-label">'+cat+'</span><div class="bk-bar-wrap"><div class="bk-bar-fill" style="width:'+(val/maxD*100).toFixed(0)+'%;background:#C0392B44;"></div></div><span class="bk-val">-'+fmtBRL(val)+'</span></div>').join('');
-  const totalDays=daysInMonth(curYear,curMonth);const today=new Date();const isNow=curYear===today.getFullYear()&&curMonth===today.getMonth();const todayDay=today.getDate();
   const launched=new Set(recs.map(r=>parseInt(r.data.split('-')[2])));
   let streak=0;for(let i=1;i<=90;i++){const d=new Date(today);d.setDate(d.getDate()-i);const y=d.getFullYear(),mi=d.getMonth();const ds=y+'-'+String(mi+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const r=cache.recs[mkKey(y,mi)]||[];if(r.some(rec=>rec.data===ds))streak++;else break;}
   document.getElementById('streakBadge').innerHTML=streak>0?'<div class="streak-badge">'+streak+' dia'+(streak===1?'':'s')+' seguidos</div>':'';
